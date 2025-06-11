@@ -588,25 +588,3 @@ MIT License - see LICENSE file for details.
 ## Contributing
 
 Contributions welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-## Changelog
-
-### Version 2.0.0
-
-- **NEW**: Complete Matrix class with full linear algebra support
-- **NEW**: 2D, 3D, and 4D transformation matrices
-- **NEW**: Camera and projection matrices for 3D graphics
-- **NEW**: LU decomposition, eigenvalue computation
-- **NEW**: Matrix construction from vectors
-- **NEW**: Comprehensive transformation utilities
-- Matrix-vector multiplication with automatic dimension handling
-- Enhanced NumPy integration for matrices
-- Performance optimizations for real-time applications
-
-### Version 1.0.0
-
-- Initial release
-- Complete Vector2, Vector3, Vector4 implementations
-- NumPy integration
-- Full operator overloading
-- Type hints and documentation
