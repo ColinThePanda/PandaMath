@@ -434,6 +434,56 @@ class Matrix:
     def to_numpy(self) -> np.ndarray:
         return np.array(self.data)
 
+    def to_bytes(self, format='float32', order='column'):
+        """
+        Convert the matrix to bytes suitable for OpenGL/moderngl uniforms.
+        
+        Args:
+            format: Data format ('float32', 'float64', 'int32', 'uint32')
+            order: Matrix storage order ('column' for OpenGL column-major, 'row' for row-major)
+        
+        Returns:
+            bytes: The matrix data converted to bytes suitable for OpenGL uniforms
+        
+        Example:
+            # For moderngl uniform buffer
+            matrix_bytes = my_matrix.to_bytes('float32', 'column')
+            uniform_buffer = ctx.buffer(matrix_bytes)
+            
+            # For shader uniform
+            shader['u_transform'].write(my_matrix.to_bytes())
+        """
+        import struct
+        
+        if order == 'column':
+            # OpenGL expects column-major order
+            flat_data = []
+            for j in range(self.cols):
+                for i in range(self.rows):
+                    flat_data.append(float(self[i, j]))
+        else:
+            # Row-major order
+            flat_data = []
+            for i in range(self.rows):
+                for j in range(self.cols):
+                    flat_data.append(float(self[i, j]))
+        
+        # Pack the data based on format
+        if format == 'float32':
+            pack_format = f'{len(flat_data)}f'
+        elif format == 'float64':
+            pack_format = f'{len(flat_data)}d'
+        elif format == 'int32':
+            pack_format = f'{len(flat_data)}i'
+            flat_data = [int(x) for x in flat_data]
+        elif format == 'uint32':
+            pack_format = f'{len(flat_data)}I'
+            flat_data = [int(abs(x)) for x in flat_data]
+        else:
+            raise ValueError(f"Unsupported format: {format}. Use 'float32', 'float64', 'int32', or 'uint32'")
+        
+        return struct.pack(pack_format, *flat_data)
+
     @classmethod
     def from_numpy(cls, array: np.ndarray) -> M:
         return cls(array)
@@ -702,6 +752,117 @@ class Matrix:
 
         return eigenvalues, eigenvectors
 
+def mat2(*args) -> Matrix:
+    """
+    Create a 2x2 matrix from various inputs:
+    - mat2() -> 2x2 identity matrix
+    - mat2(scalar) -> 2x2 matrix with scalar on diagonal
+    - mat2(a, b, c, d) -> [[a, b], [c, d]]
+    - mat2([a, b, c, d]) -> [[a, b], [c, d]]
+    - mat2([[a, b], [c, d]]) -> 2x2 matrix from nested list
+    """
+    if len(args) == 0:
+        return Matrix.identity(2)
+    elif len(args) == 1:
+        arg = args[0]
+        if isinstance(arg, (int, float)):
+            return Matrix([[arg, 0], [0, arg]])
+        elif isinstance(arg, (list, tuple)):
+            if len(arg) == 4:
+                return Matrix([[arg[0], arg[1]], [arg[2], arg[3]]])
+            elif len(arg) == 2 and isinstance(arg[0], (list, tuple)):
+                return Matrix(arg)
+            else:
+                raise ValueError("Invalid input for 2x2 matrix")
+        else:
+            raise ValueError("Invalid input type for 2x2 matrix")
+    elif len(args) == 4:
+        return Matrix([[args[0], args[1]], [args[2], args[3]]])
+    else:
+        raise ValueError("Invalid number of arguments for 2x2 matrix")
+
+
+def mat3(*args) -> Matrix:
+    """
+    Create a 3x3 matrix from various inputs:
+    - mat3() -> 3x3 identity matrix
+    - mat3(scalar) -> 3x3 matrix with scalar on diagonal
+    - mat3(a, b, c, d, e, f, g, h, i) -> [[a, b, c], [d, e, f], [g, h, i]]
+    - mat3([a, b, c, d, e, f, g, h, i]) -> 3x3 matrix from flat list
+    - mat3([[a, b, c], [d, e, f], [g, h, i]]) -> 3x3 matrix from nested list
+    """
+    if len(args) == 0:
+        return Matrix.identity(3)
+    elif len(args) == 1:
+        arg = args[0]
+        if isinstance(arg, (int, float)):
+            return Matrix([[arg, 0, 0], [0, arg, 0], [0, 0, arg]])
+        elif isinstance(arg, (list, tuple)):
+            if len(arg) == 9:
+                return Matrix([
+                    [arg[0], arg[1], arg[2]],
+                    [arg[3], arg[4], arg[5]],
+                    [arg[6], arg[7], arg[8]]
+                ])
+            elif len(arg) == 3 and isinstance(arg[0], (list, tuple)):
+                return Matrix(arg)
+            else:
+                raise ValueError("Invalid input for 3x3 matrix")
+        else:
+            raise ValueError("Invalid input type for 3x3 matrix")
+    elif len(args) == 9:
+        return Matrix([
+            [args[0], args[1], args[2]],
+            [args[3], args[4], args[5]],
+            [args[6], args[7], args[8]]
+        ])
+    else:
+        raise ValueError("Invalid number of arguments for 3x3 matrix")
+
+
+def mat4(*args) -> Matrix:
+    """
+    Create a 4x4 matrix from various inputs:
+    - mat4() -> 4x4 identity matrix
+    - mat4(scalar) -> 4x4 matrix with scalar on diagonal
+    - mat4(a, b, ..., p) -> 4x4 matrix from 16 values (row-major)
+    - mat4([a, b, ..., p]) -> 4x4 matrix from flat list of 16 values
+    - mat4([[a, b, c, d], [e, f, g, h], [i, j, k, l], [m, n, o, p]]) -> 4x4 matrix from nested list
+    """
+    if len(args) == 0:
+        return Matrix.identity(4)
+    elif len(args) == 1:
+        arg = args[0]
+        if isinstance(arg, (int, float)):
+            return Matrix([
+                [arg, 0, 0, 0],
+                [0, arg, 0, 0],
+                [0, 0, arg, 0],
+                [0, 0, 0, arg]
+            ])
+        elif isinstance(arg, (list, tuple)):
+            if len(arg) == 16:
+                return Matrix([
+                    [arg[0], arg[1], arg[2], arg[3]],
+                    [arg[4], arg[5], arg[6], arg[7]],
+                    [arg[8], arg[9], arg[10], arg[11]],
+                    [arg[12], arg[13], arg[14], arg[15]]
+                ])
+            elif len(arg) == 4 and isinstance(arg[0], (list, tuple)):
+                return Matrix(arg)
+            else:
+                raise ValueError("Invalid input for 4x4 matrix")
+        else:
+            raise ValueError("Invalid input type for 4x4 matrix")
+    elif len(args) == 16:
+        return Matrix([
+            [args[0], args[1], args[2], args[3]],
+            [args[4], args[5], args[6], args[7]],
+            [args[8], args[9], args[10], args[11]],
+            [args[12], args[13], args[14], args[15]]
+        ])
+    else:
+        raise ValueError("Invalid number of arguments for 4x4 matrix")
 
 # 2D Transformation utility functions
 def rotation_matrix_2d(angle_radians: float) -> Matrix:

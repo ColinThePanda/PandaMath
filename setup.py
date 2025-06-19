@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="panda_math",  # Must be unique on PyPI
-    version="0.1.0",
+    version="0.1.1",
     packages=find_packages(),
     install_requires=["numpy"],
     author="Colin Politi",

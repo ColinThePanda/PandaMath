@@ -60,6 +60,10 @@ class VectorBase(Generic[T]):
     def magnitude(self) -> float:
         return np.sqrt(sum(x**2 for x in self))
 
+    @property
+    def normalized(self):
+        return self.normalize()
+
     def normalize(self) -> T:
         magnitude = self.magnitude
         if magnitude == 0:
