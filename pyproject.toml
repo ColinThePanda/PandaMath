@@ -22,3 +22,9 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/ColinThePanda/PandaMath"
 Bug_Tracker = "https://github.com/ColinThePanda/PandaMath/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
