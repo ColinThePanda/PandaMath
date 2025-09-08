@@ -98,17 +98,42 @@ class Vector2(VectorBase["Vector2"]):
 
     def __init__(self, x, y=None):
         if y is None:
-            try:
-                iter_data = iter(x)
-                self.x = next(iter_data)
-                self.y = next(iter_data)
-            except (TypeError, StopIteration):
-                raise ValueError(
-                    "If only one argument is provided, it must be an iterable with at least 2 elements"
-                )
+            if isinstance(x, (int, float)):
+                self.x = x
+                self.y = x
+            else:
+                try:
+                    iter_data = iter(x)
+                    self.x = next(iter_data)
+                    self.y = next(iter_data)
+                except (TypeError, StopIteration):
+                    raise ValueError(
+                        "If only one argument is provided, it must be an iterable with at least 2 elements"
+                    )
         else:
             self.x = x
             self.y = y
+
+    def __getattr__(self, name: str):
+        """Handle swizzling like vec.xy, vec.yx, vec.xx, etc."""
+        if len(name) >= 2 and all(c in 'xy' for c in name):
+            values = []
+            for c in name:
+                if c == 'x':
+                    values.append(self.x)
+                elif c == 'y':
+                    values.append(self.y)
+            
+            if len(values) == 2:
+                return Vector2(*values)
+            elif len(values) == 3:
+                return Vector3(*values)
+            elif len(values) == 4:
+                return Vector4(*values)
+            else:
+                return tuple(values)
+        
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __iter__(self) -> Iterator[float]:
         yield self.x
@@ -359,21 +384,49 @@ class Vector3(VectorBase["Vector3"]):
 
     def __init__(self, x, y=None, z=None):
         if y is None and z is None:
-            try:
-                iter_data = iter(x)
-                self.x = next(iter_data)
-                self.y = next(iter_data)
-                self.z = next(iter_data)
-            except (TypeError, StopIteration):
-                raise ValueError(
-                    "If only one argument is provided, it must be an iterable with at least 3 elements"
-                )
+            if isinstance(x, (int, float)):
+                self.x = x
+                self.y = x
+                self.z = x
+            else:
+                try:
+                    iter_data = iter(x)
+                    self.x = next(iter_data)
+                    self.y = next(iter_data)
+                    self.z = next(iter_data)
+                except (TypeError, StopIteration):
+                    raise ValueError(
+                        "If only one argument is provided, it must be an iterable with at least 3 elements"
+                    )
         elif z is None:
             raise ValueError("Must provide all 3 components or a single iterable")
         else:
             self.x = x
             self.y = y
             self.z = z
+
+    def __getattr__(self, name: str):
+        """Handle swizzling like vec.xyz, vec.xzy, vec.xy, etc."""
+        if len(name) >= 2 and all(c in 'xyz' for c in name):
+            values = []
+            for c in name:
+                if c == 'x':
+                    values.append(self.x)
+                elif c == 'y':
+                    values.append(self.y)
+                elif c == 'z':
+                    values.append(self.z)
+            
+            if len(values) == 2:
+                return Vector2(*values)
+            elif len(values) == 3:
+                return Vector3(*values)
+            elif len(values) == 4:
+                return Vector4(*values)
+            else:
+                return tuple(values)
+        
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __iter__(self) -> Iterator[float]:
         yield self.x
@@ -398,10 +451,10 @@ class Vector3(VectorBase["Vector3"]):
             self.x = value
         elif index == 1:
             self.y = value
-        elif index == 3:
+        elif index == 2:
             self.z = value
         else:
-            raise IndexError("Vector2 index out of range")
+            raise IndexError("Vector3 index out of range")
 
     def __add__(self, other: Union["Vector3", float, int]) -> "Vector3":
         if isinstance(other, Vector3):
@@ -655,16 +708,22 @@ class Vector4(VectorBase["Vector4"]):
 
     def __init__(self, x, y=None, z=None, w=None):
         if y is None and z is None and w is None:
-            try:
-                iter_data = iter(x)
-                self.x = next(iter_data)
-                self.y = next(iter_data)
-                self.z = next(iter_data)
-                self.w = next(iter_data)
-            except (TypeError, StopIteration):
-                raise ValueError(
-                    "If only one argument is provided, it must be an iterable with at least 4 elements"
-                )
+            if isinstance(x, (int, float)):
+                self.x = x
+                self.y = x
+                self.z = x
+                self.w = x
+            else:
+                try:
+                    iter_data = iter(x)
+                    self.x = next(iter_data)
+                    self.y = next(iter_data)
+                    self.z = next(iter_data)
+                    self.w = next(iter_data)
+                except (TypeError, StopIteration):
+                    raise ValueError(
+                        "If only one argument is provided, it must be an iterable with at least 4 elements"
+                    )
         elif z is None or w is None:
             raise ValueError("Must provide all 4 components or a single iterable")
         else:
@@ -672,6 +731,31 @@ class Vector4(VectorBase["Vector4"]):
             self.y = y
             self.z = z
             self.w = w
+
+    def __getattr__(self, name: str):
+        """Handle swizzling like vec.xyzw, vec.xyz, vec.xy, etc."""
+        if len(name) >= 2 and all(c in 'xyzw' for c in name):
+            values = []
+            for c in name:
+                if c == 'x':
+                    values.append(self.x)
+                elif c == 'y':
+                    values.append(self.y)
+                elif c == 'z':
+                    values.append(self.z)
+                elif c == 'w':
+                    values.append(self.w)
+            
+            if len(values) == 2:
+                return Vector2(*values)
+            elif len(values) == 3:
+                return Vector3(*values)
+            elif len(values) == 4:
+                return Vector4(*values)
+            else:
+                return tuple(values)
+        
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __iter__(self) -> Iterator[float]:
         yield self.x
@@ -704,7 +788,7 @@ class Vector4(VectorBase["Vector4"]):
         elif index == 3:
             self.w = value
         else:
-            raise IndexError("Vector2 index out of range")
+            raise IndexError("Vector4 index out of range")
 
     def __add__(self, other: Union["Vector4", float, int]) -> "Vector4":
         if isinstance(other, Vector4):
