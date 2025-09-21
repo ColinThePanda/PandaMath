@@ -10,17 +10,26 @@ from typing import (
     Generic,
     Any,
     TYPE_CHECKING,
-    overload,
+    Type,
 )
+from collections.abc import Sequence
+from abc import ABC, abstractmethod
 
 if TYPE_CHECKING:
     from .matrix import Matrix  # only for type checking, no runtime import
 
-T = TypeVar("T")
+T = TypeVar("T", bound="VectorBase")
+
+Number = Union[int, float]
 
 
-class VectorBase(Generic[T]):
+class VectorBase(Generic[T], Sequence[float], ABC):
     """Base class for all vector implementations"""
+
+    @classmethod
+    @abstractmethod
+    def _dimension(cls) -> int:
+        pass
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({', '.join(str(x) for x in self)})"
@@ -37,6 +46,9 @@ class VectorBase(Generic[T]):
     def __getitem__(self, index: int) -> float:
         raise NotImplementedError("Subclasses must implement __getitem__")
 
+    def __contains__(self, item) -> bool:
+        raise NotImplementedError("Subclasses must implement __getitem__")
+
     def to_list(self) -> List[float]:
         return list(self)
 
@@ -47,28 +59,25 @@ class VectorBase(Generic[T]):
         return np.array(list(self))
 
     @classmethod
-    def from_numpy(cls, array: np.ndarray) -> T:
-        if len(array) < cls._dimension:
-            raise ValueError(f"Array must have at least {cls._dimension} elements")
-        return cls(*array[: cls._dimension])
-
-    @classmethod
-    def from_iterable(cls, iterable: Iterable) -> T:
-        return cls(*iterable)
+    def from_numpy(cls: Type[T], array: np.ndarray) -> T:
+        if len(array) < cls._dimension():
+            raise ValueError(f"Array must have at least {cls._dimension()} elements")
+        return cls(*array[:cls._dimension()])
 
     @property
     def magnitude(self) -> float:
         return np.sqrt(sum(x**2 for x in self))
 
-    @property
-    def normalized(self):
-        return self.normalize()
-
-    def normalize(self) -> T:
-        magnitude = self.magnitude
-        if magnitude == 0:
+    def normalize(self: T) -> T:
+        mag = self.magnitude
+        if mag == 0:
             return self
-        return self.__class__(*(x / magnitude for x in self))
+        cls: Type[T] = type(self)
+        return cls(*(x / mag for x in self))
+
+    @property
+    def normalized(self: T) -> T:
+        return self.normalize()
 
     def distance_to(self, other: T) -> float:
         if not isinstance(other, self.__class__):
@@ -84,35 +93,33 @@ class VectorBase(Generic[T]):
             )
         return sum(a * b for a, b in zip(self, other))
 
-    def reverse(self):
-        for i in range(len(self)):
-            self[i] *= -1
+    def reverse(self : T) -> T:
+        cls: Type[T] = type(self)
+        return cls(*(-x for x in self))
 
     @property
-    def reversed(self):
-        return self.__class__(-x for x in self)
+    def reversed(self : T) -> T:
+        return self.reverse()
 
 
 class Vector2(VectorBase["Vector2"]):
-    _dimension = 2
+    @classmethod
+    def _dimension(cls) -> int:
+        return 2
 
-    def __init__(self, x, y=None):
-        if y is None:
-            if isinstance(x, (int, float)):
-                self.x = x
-                self.y = x
-            else:
-                try:
-                    iter_data = iter(x)
-                    self.x = next(iter_data)
-                    self.y = next(iter_data)
-                except (TypeError, StopIteration):
-                    raise ValueError(
-                        "If only one argument is provided, it must be an iterable with at least 2 elements"
-                    )
+    def __init__(self, *args):
+        self.x : float
+        self.y : float
+        if len(args) == 2:
+            self.x, self.y = map(float, args)
+        elif len(args) == 1 and isinstance(args[0], Union[Iterable, "Vector2"]):
+            self.x, self.y = map(float, args[0])
+        elif len(args) == 1 and isinstance(args[0], Number):
+            self.x = self.y = float(args[0])
+        elif len(args) == 0:
+            self.x = self.y = self.z = 0.0
         else:
-            self.x = x
-            self.y = y
+            raise TypeError("Invalid arguments for Vector2")
 
     def __getattr__(self, name: str):
         """Handle swizzling like vec.xy, vec.yx, vec.xx, etc."""
@@ -198,7 +205,7 @@ class Vector2(VectorBase["Vector2"]):
                 raise ValueError(
                     f"Cannot multiply Vector2 with Matrix({other.rows}×{other.cols})"
                 )
-            result = [0] * other.rows
+            result = [0.0] * other.rows
             for i in range(other.rows):
                 for j in range(other.cols):
                     if j == 0:
@@ -380,30 +387,22 @@ class Vector2(VectorBase["Vector2"]):
 
 
 class Vector3(VectorBase["Vector3"]):
-    _dimension = 3
+    _dimension : int = 3
 
-    def __init__(self, x, y=None, z=None):
-        if y is None and z is None:
-            if isinstance(x, (int, float)):
-                self.x = x
-                self.y = x
-                self.z = x
-            else:
-                try:
-                    iter_data = iter(x)
-                    self.x = next(iter_data)
-                    self.y = next(iter_data)
-                    self.z = next(iter_data)
-                except (TypeError, StopIteration):
-                    raise ValueError(
-                        "If only one argument is provided, it must be an iterable with at least 3 elements"
-                    )
-        elif z is None:
-            raise ValueError("Must provide all 3 components or a single iterable")
+    def __init__(self, *args):
+        self.x : float
+        self.y : float
+        self.z : float
+        if len(args) == 3:
+            self.x, self.y, self.z = map(float, args)
+        elif len(args) == 1 and isinstance(args[0], Union[Iterable, "Vector3"]):
+            self.x, self.y, self.z = map(float, args[0])
+        elif len(args) == 1 and isinstance(args[0], Number):
+            self.x = self.y = self.z = float(args[0])
+        elif len(args) == 0:
+            self.x = self.y = self.z = 0.0
         else:
-            self.x = x
-            self.y = y
-            self.z = z
+            raise TypeError("Invalid arguments for Vector2")
 
     def __getattr__(self, name: str):
         """Handle swizzling like vec.xyz, vec.xzy, vec.xy, etc."""
@@ -496,7 +495,7 @@ class Vector3(VectorBase["Vector3"]):
                 raise ValueError(
                     f"Cannot multiply Vector3 with Matrix({other.rows}×{other.cols})"
                 )
-            result = [0] * other.rows
+            result = [0.0] * other.rows
             for i in range(other.rows):
                 for j in range(other.cols):
                     if j == 0:
@@ -592,9 +591,10 @@ class Vector3(VectorBase["Vector3"]):
 
     def __imul__(self, other: Union["Vector3", float, int]) -> "Vector3":
         if isinstance(other, (int, float)):
-            self.x *= other
-            self.y *= other
-            self.z *= other
+            factor = float(other)
+            self.x *= factor
+            self.y *= factor
+            self.z *= factor
         elif isinstance(other, Vector3):
             self.x *= other.x
             self.y *= other.y
@@ -704,33 +704,22 @@ class Vector3(VectorBase["Vector3"]):
 
 
 class Vector4(VectorBase["Vector4"]):
-    _dimension = 4
+    _dimension : int = 4
 
-    def __init__(self, x, y=None, z=None, w=None):
-        if y is None and z is None and w is None:
-            if isinstance(x, (int, float)):
-                self.x = x
-                self.y = x
-                self.z = x
-                self.w = x
-            else:
-                try:
-                    iter_data = iter(x)
-                    self.x = next(iter_data)
-                    self.y = next(iter_data)
-                    self.z = next(iter_data)
-                    self.w = next(iter_data)
-                except (TypeError, StopIteration):
-                    raise ValueError(
-                        "If only one argument is provided, it must be an iterable with at least 4 elements"
-                    )
-        elif z is None or w is None:
-            raise ValueError("Must provide all 4 components or a single iterable")
+    def __init__(self, *args):
+        self.x : float
+        self.y : float
+        self.z : float
+        if len(args) == 4:
+            self.x, self.y, self.z, self.w = map(float, args)
+        elif len(args) == 1 and isinstance(args[0], Union[Iterable, "Vector4"]):
+            self.x, self.y, self.z, self.w = map(float, args[0])
+        elif len(args) == 1 and isinstance(args[0], Number):
+            self.x = self.y = self.z = self.w = float(args[0])
+        elif len(args) == 0:
+            self.x = self.y = self.z = self.w = 0.0
         else:
-            self.x = x
-            self.y = y
-            self.z = z
-            self.w = w
+            raise TypeError("Invalid arguments for Vector2")
 
     def __getattr__(self, name: str):
         """Handle swizzling like vec.xyzw, vec.xyz, vec.xy, etc."""
@@ -846,7 +835,7 @@ class Vector4(VectorBase["Vector4"]):
                 raise ValueError(
                     f"Cannot multiply Vector4 with Matrix({other.rows}×{other.cols})"
                 )
-            result = [0] * other.rows
+            result = [0.0] * other.rows
             for i in range(other.rows):
                 for j in range(other.cols):
                     if j == 0:

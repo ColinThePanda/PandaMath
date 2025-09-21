@@ -43,8 +43,11 @@ from .matrix import (
 # If utility functions are in vector.py:
 from .vector import (
     vec2_to_vec3,
+    vec2_to_vec4,
     vec3_to_vec2,
     vec3_to_vec4,
+    vec4_to_vec2,
+    vec4_to_vec3,
 )
 
 # Version info
@@ -95,7 +98,10 @@ __all__ = [
     "look_at_matrix",
     # Utilities
     "vec2_to_vec3",
+    "vec2_to_vec4",
     "vec3_to_vec2",
     "vec3_to_vec4",
+    "vec4_to_vec2",
+    "vec4_to_vec3",
     "interpolate_matrices",
 ]

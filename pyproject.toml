@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "panda-math"
-version = "0.1.7"
+version = "0.1.8"
 description = "A Vector, Matrix, and transformation utilities for 2D, 3D graphics, and game development."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -24,7 +24,7 @@ Homepage = "https://github.com/ColinThePanda/PandaMath"
 Bug_Tracker = "https://github.com/ColinThePanda/PandaMath/issues"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["panda_math"]
 
 [tool.setuptools.package-dir]
-"" = "src"
+"" = "panda_math"

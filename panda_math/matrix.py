@@ -1,5 +1,18 @@
 import numpy as np
-from typing import List, Union, Optional, Any, Iterator, TypeVar, Tuple, Callable
+from typing import (
+    List,
+    Union,
+    Optional,
+    Any,
+    Iterator,
+    TypeVar,
+    Tuple,
+    Callable,
+    Dict,
+    overload,
+    Sequence,
+)
+from collections.abc import Sequence
 
 # Import Vector only for type checking to avoid circular import at runtime
 from typing import TYPE_CHECKING
@@ -9,59 +22,36 @@ if TYPE_CHECKING:
 
 M = TypeVar("M", bound="Matrix")
 
+Number = Union[int, float]
+
 
 class Matrix:
     def __init__(
         self,
-        data=None,
-        rows: Optional[int] = None,
-        cols: Optional[int] = None,
-    ):
-        if data is not None:
-            if isinstance(data, np.ndarray):
-                self.data = data.tolist()
-                self.rows = len(self.data)
-                self.cols = len(self.data[0]) if self.rows > 0 else 0
-            elif isinstance(data, list) or isinstance(data, tuple):
-                if len(data) == 0:
-                    self.data = []
-                    self.rows = 0
-                    self.cols = 0
-                else:
-                    from .vector import (
-                        Vector2,
-                        Vector3,
-                        Vector4,
-                    )  # import here to avoid circular import
+        data: Union[np.ndarray, Sequence[Sequence[Number]], None] = None,
+        rows: int = 2,
+        cols: int = 2,
+    ) -> None:
+        self.data: List[List[Number]]
+        self.rows: int
+        self.cols: int
 
-                    if isinstance(data[0], (Vector2, Vector3, Vector4)):
-                        # Handle vector inputs based on their dimensions
-                        if isinstance(data[0], Vector2):
-                            self.data = [list(v) for v in data]
-                            self.rows = len(data)
-                            self.cols = 2
-                        elif isinstance(data[0], Vector3):
-                            self.data = [list(v) for v in data]
-                            self.rows = len(data)
-                            self.cols = 3
-                        else:  # Vector4
-                            self.data = [list(v) for v in data]
-                            self.rows = len(data)
-                            self.cols = 4
-                    elif isinstance(data[0], (list, tuple)):
-                        self.data = [list(row) for row in data]
-                        self.rows = len(data)
-                        self.cols = len(data[0]) if self.rows > 0 else 0
-                    else:
-                        self.data = [list(data)]
-                        self.rows = 1
-                        self.cols = len(data)
-            else:
-                raise ValueError("Unsupported data type for Matrix initialization")
-        elif rows is not None and cols is not None:
+        if isinstance(data, np.ndarray) and data.ndim == 2:
+            self.data = data.tolist()
+            self.rows = len(self.data)
+            self.cols = len(self.data[0]) if self.rows > 0 else 0
+
+        elif isinstance(data, Sequence):
+            # here, data is Sequence[Sequence[Number]]
+            self.data = [list(v) for v in data]
+            self.rows = len(self.data)
+            self.cols = len(self.data[0]) if self.rows > 0 else 0
+
+        elif data is None:
             self.rows = rows
             self.cols = cols
             self.data = [[0 for _ in range(cols)] for _ in range(rows)]
+
         else:
             raise ValueError("Either data or dimensions (rows, cols) must be provided")
 
@@ -85,8 +75,14 @@ class Matrix:
     def __repr__(self) -> str:
         return str(self)
 
-    def __getitem__(self, key) -> Union[List[float], float]:
-        if isinstance(key, tuple) and len(key) == 2:
+    @overload
+    def __getitem__(self, key: int) -> Sequence[Number]: ...
+    
+    @overload
+    def __getitem__(self, key: Tuple[int, int]) -> Number: ...
+
+    def __getitem__(self, key):
+        if isinstance(key, tuple):
             i, j = key
             return self.data[i][j]
         elif isinstance(key, int):
@@ -94,24 +90,28 @@ class Matrix:
         else:
             raise TypeError("Invalid index type")
 
+    @overload
+    def __setitem__(self, key: int, value: Sequence[Number]): ...
+    
+    @overload
+    def __setitem__(self, key: Tuple[int, int], value: Number): ...
+
     def __setitem__(self, key, value):
-        if isinstance(key, tuple) and len(key) == 2:
+        if isinstance(key, tuple):
             i, j = key
             self.data[i][j] = value
         elif isinstance(key, int):
-            if len(value) != self.cols:
-                raise ValueError(f"Row must have {self.cols} elements")
-            self.data[key] = list(value)
+            self.data[key] = list(value)  # <- cast Sequence -> list internally
         else:
             raise TypeError("Invalid index type")
 
-    def __iter__(self) -> Iterator[List[float]]:
+    def __iter__(self) -> Iterator[List[Number]]:
         return iter(self.data)
 
     def __len__(self) -> int:
         return self.rows
 
-    def __add__(self, other: Union[M, float, int]) -> M:
+    def __add__(self, other: Union["Matrix", Number]) -> "Matrix":
         if isinstance(other, Matrix):
             if self.rows != other.rows or self.cols != other.cols:
                 raise ValueError("Matrix dimensions do not match for addition")
@@ -128,10 +128,10 @@ class Matrix:
             return result
         return NotImplemented
 
-    def __radd__(self, other: Union[float, int]) -> M:
+    def __radd__(self, other: Number) -> "Matrix":
         return self.__add__(other)
 
-    def __sub__(self, other: Union[M, float, int]) -> M:
+    def __sub__(self, other: Union["Matrix", Number]) -> "Matrix":
         if isinstance(other, Matrix):
             if self.rows != other.rows or self.cols != other.cols:
                 raise ValueError("Matrix dimensions do not match for subtraction")
@@ -148,7 +148,7 @@ class Matrix:
             return result
         return NotImplemented
 
-    def __rsub__(self, other: Union[float, int]) -> M:
+    def __rsub__(self, other: Number) -> "Matrix":
         if isinstance(other, (int, float)):
             result = Matrix(rows=self.rows, cols=self.cols)
             for i in range(self.rows):
@@ -157,9 +157,18 @@ class Matrix:
             return result
         return NotImplemented
 
-    def __mul__(
-        self, other: Union[M, "Vector2", "Vector3", "Vector4", float, int]
-    ) -> Union[M, "Vector2", "Vector3", "Vector4", List[float]]:
+    @overload
+    def __mul__(self, other: "Matrix") -> "Matrix": ...
+    @overload
+    def __mul__(self, other: "Vector2") -> "Vector2": ...
+    @overload
+    def __mul__(self, other: "Vector3") -> "Vector3": ...
+    @overload
+    def __mul__(self, other: "Vector4") -> "Vector4": ...
+    @overload
+    def __mul__(self, other: Number) -> "Matrix": ...
+
+    def __mul__(self, other):
         from .vector import Vector2, Vector3, Vector4
 
         if isinstance(other, Matrix):
@@ -180,7 +189,7 @@ class Matrix:
                 raise ValueError(
                     f"Cannot multiply Matrix({self.rows}×{self.cols}) with Vector2(2)"
                 )
-            result = [0] * self.rows
+            result = [0.0] * self.rows
             for i in range(self.rows):
                 result[i] = self[i, 0] * other.x + self[i, 1] * other.y
             if self.rows == 2:
@@ -195,7 +204,7 @@ class Matrix:
                 raise ValueError(
                     f"Cannot multiply Matrix({self.rows}×{self.cols}) with Vector3(3)"
                 )
-            result = [0] * self.rows
+            result = [0.0] * self.rows
             for i in range(self.rows):
                 result[i] = (
                     self[i, 0] * other.x + self[i, 1] * other.y + self[i, 2] * other.z
@@ -212,7 +221,7 @@ class Matrix:
                 raise ValueError(
                     f"Cannot multiply Matrix({self.rows}×{self.cols}) with Vector4(4)"
                 )
-            result = [0] * self.rows
+            result = [0.0] * self.rows
             for i in range(self.rows):
                 result[i] = (
                     self[i, 0] * other.x
@@ -235,12 +244,10 @@ class Matrix:
             return result
         return NotImplemented
 
-    def __rmul__(self, other: Union[float, int]) -> M:
-        if isinstance(other, (int, float)):
-            return self.__mul__(other)
-        return NotImplemented
+    def __rmul__(self, other: Number) -> "Matrix":
+        return self * other
 
-    def __truediv__(self, other: Union[float, int]) -> M:
+    def __truediv__(self, other: Number) -> "Matrix":
         if isinstance(other, (int, float)):
             if other == 0:
                 raise ZeroDivisionError("Division by zero")
@@ -262,7 +269,7 @@ class Matrix:
                     return False
         return True
 
-    def transpose(self) -> M:
+    def transpose(self) -> "Matrix":
         result = Matrix(rows=self.cols, cols=self.rows)
         for i in range(self.rows):
             for j in range(self.cols):
@@ -301,7 +308,7 @@ class Matrix:
         minor = self.minor(row, col)
         return (-1) ** (row + col) * minor.determinant()
 
-    def minor(self, row: int, col: int) -> M:
+    def minor(self, row: int, col: int) -> "Matrix":
         """Return the minor matrix by removing the specified row and column"""
         result = Matrix(rows=self.rows - 1, cols=self.cols - 1)
         r_idx = 0
@@ -317,7 +324,7 @@ class Matrix:
             r_idx += 1
         return result
 
-    def adjugate(self) -> M:
+    def adjugate(self) -> "Matrix":
         """Calculate the adjugate (adjoint) matrix"""
         if self.rows != self.cols:
             raise ValueError("Adjugate only defined for square matrices")
@@ -328,7 +335,7 @@ class Matrix:
                 result[i, j] = self.cofactor(j, i)  # Note: transpose of cofactor matrix
         return result
 
-    def inverse(self) -> M:
+    def inverse(self) -> "Matrix":
         if self.rows != self.cols:
             raise ValueError("Inverse only defined for square matrices")
 
@@ -399,7 +406,7 @@ class Matrix:
 
         return sum(self[i, i] for i in range(self.rows))
 
-    def row(self, i: int) -> Union["Vector2", "Vector3", "Vector4", List[float]]:
+    def row(self, i: int) -> Union[Sequence[Number], "Vector2", "Vector3", "Vector4"]:
         from .vector import Vector2, Vector3, Vector4
 
         if i < 0 or i >= self.rows:
@@ -415,7 +422,7 @@ class Matrix:
             )
         return self.data[i]
 
-    def col(self, j: int) -> Union["Vector2", "Vector3", "Vector4", List[float]]:
+    def col(self, j: int) -> Union[List[Number], "Vector2", "Vector3", "Vector4"]:
         from .vector import Vector2, Vector3, Vector4
 
         if j < 0 or j >= self.cols:
@@ -434,28 +441,28 @@ class Matrix:
     def to_numpy(self) -> np.ndarray:
         return np.array(self.data)
 
-    def to_bytes(self, format='float32', order='column'):
+    def to_bytes(self, format: str = "float32", order: str = "column"):
         """
         Convert the matrix to bytes suitable for OpenGL/moderngl uniforms.
-        
+
         Args:
             format: Data format ('float32', 'float64', 'int32', 'uint32')
             order: Matrix storage order ('column' for OpenGL column-major, 'row' for row-major)
-        
+
         Returns:
             bytes: The matrix data converted to bytes suitable for OpenGL uniforms
-        
+
         Example:
             # For moderngl uniform buffer
             matrix_bytes = my_matrix.to_bytes('float32', 'column')
             uniform_buffer = ctx.buffer(matrix_bytes)
-            
+
             # For shader uniform
             shader['u_transform'].write(my_matrix.to_bytes())
         """
         import struct
-        
-        if order == 'column':
+
+        if order == "column":
             # OpenGL expects column-major order
             flat_data = []
             for j in range(self.cols):
@@ -467,36 +474,38 @@ class Matrix:
             for i in range(self.rows):
                 for j in range(self.cols):
                     flat_data.append(float(self[i, j]))
-        
+
         # Pack the data based on format
-        if format == 'float32':
-            pack_format = f'{len(flat_data)}f'
-        elif format == 'float64':
-            pack_format = f'{len(flat_data)}d'
-        elif format == 'int32':
-            pack_format = f'{len(flat_data)}i'
+        if format == "float32":
+            pack_format = f"{len(flat_data)}f"
+        elif format == "float64":
+            pack_format = f"{len(flat_data)}d"
+        elif format == "int32":
+            pack_format = f"{len(flat_data)}i"
             flat_data = [int(x) for x in flat_data]
-        elif format == 'uint32':
-            pack_format = f'{len(flat_data)}I'
+        elif format == "uint32":
+            pack_format = f"{len(flat_data)}I"
             flat_data = [int(abs(x)) for x in flat_data]
         else:
-            raise ValueError(f"Unsupported format: {format}. Use 'float32', 'float64', 'int32', or 'uint32'")
-        
+            raise ValueError(
+                f"Unsupported format: {format}. Use 'float32', 'float64', 'int32', or 'uint32'"
+            )
+
         return struct.pack(pack_format, *flat_data)
 
     @classmethod
-    def from_numpy(cls, array: np.ndarray) -> M:
+    def from_numpy(cls, array: np.ndarray) -> "Matrix":
         return cls(array)
 
     @classmethod
-    def identity(cls, size: int) -> M:
+    def identity(cls, size: int) -> "Matrix":
         result = cls(rows=size, cols=size)
         for i in range(size):
             result[i, i] = 1
         return result
 
     @classmethod
-    def from_rows(cls, *rows) -> M:
+    def from_rows(cls, *rows: Sequence[Number]) -> "Matrix":
         from .vector import Vector2, Vector3, Vector4
 
         if len(rows) == 0:
@@ -516,7 +525,7 @@ class Matrix:
         return cls(processed_rows)
 
     @classmethod
-    def from_cols(cls, *cols) -> M:
+    def from_cols(cls, *cols: Sequence[Number]) -> "Matrix":
         from .vector import Vector2, Vector3, Vector4
 
         if len(cols) == 0:
@@ -560,7 +569,7 @@ class Matrix:
 
         return result
 
-    def apply(self, func: Callable[[float], float]) -> M:
+    def apply(self, func: Callable[[float], float]) -> "Matrix":
         """Apply a function to each element of the matrix"""
         result = Matrix(rows=self.rows, cols=self.cols)
         for i in range(self.rows):
@@ -568,7 +577,7 @@ class Matrix:
                 result[i, j] = func(self[i, j])
         return result
 
-    def row_echelon_form(self) -> M:
+    def row_echelon_form(self) -> "Matrix":
         """Transform the matrix to row echelon form using Gaussian elimination"""
         result = Matrix(data=self.data)  # Create a copy
         lead = 0
@@ -606,7 +615,7 @@ class Matrix:
 
         return result
 
-    def reduced_row_echelon_form(self) -> M:
+    def reduced_row_echelon_form(self) -> "Matrix":
         """Transform the matrix to reduced row echelon form"""
         result = self.row_echelon_form()
 
@@ -641,7 +650,7 @@ class Matrix:
 
         return rank
 
-    def lu_decomposition(self) -> Tuple[M, M]:
+    def lu_decomposition(self) -> Tuple["Matrix", "Matrix"]:
         """
         Decompose the matrix into L and U matrices where:
         - L is lower triangular with ones on the diagonal
@@ -680,7 +689,7 @@ class Matrix:
 
     def eigenvectors(
         self, max_iterations: int = 100, tolerance: float = 1e-10
-    ) -> Tuple[List[float], List[M]]:
+    ) -> Tuple[List[float], List["Matrix"]]:
         """
         Compute eigenvalues and eigenvectors using the power method.
         Returns (eigenvalues, eigenvectors)
@@ -752,7 +761,8 @@ class Matrix:
 
         return eigenvalues, eigenvectors
 
-def mat2(*args) -> Matrix:
+
+def mat2(*args: Number) -> Matrix:
     """
     Create a 2x2 matrix from various inputs:
     - mat2() -> 2x2 identity matrix
@@ -782,7 +792,7 @@ def mat2(*args) -> Matrix:
         raise ValueError("Invalid number of arguments for 2x2 matrix")
 
 
-def mat3(*args) -> Matrix:
+def mat3(*args: Number) -> Matrix:
     """
     Create a 3x3 matrix from various inputs:
     - mat3() -> 3x3 identity matrix
@@ -799,11 +809,13 @@ def mat3(*args) -> Matrix:
             return Matrix([[arg, 0, 0], [0, arg, 0], [0, 0, arg]])
         elif isinstance(arg, (list, tuple)):
             if len(arg) == 9:
-                return Matrix([
-                    [arg[0], arg[1], arg[2]],
-                    [arg[3], arg[4], arg[5]],
-                    [arg[6], arg[7], arg[8]]
-                ])
+                return Matrix(
+                    [
+                        [arg[0], arg[1], arg[2]],
+                        [arg[3], arg[4], arg[5]],
+                        [arg[6], arg[7], arg[8]],
+                    ]
+                )
             elif len(arg) == 3 and isinstance(arg[0], (list, tuple)):
                 return Matrix(arg)
             else:
@@ -811,16 +823,18 @@ def mat3(*args) -> Matrix:
         else:
             raise ValueError("Invalid input type for 3x3 matrix")
     elif len(args) == 9:
-        return Matrix([
-            [args[0], args[1], args[2]],
-            [args[3], args[4], args[5]],
-            [args[6], args[7], args[8]]
-        ])
+        return Matrix(
+            [
+                [args[0], args[1], args[2]],
+                [args[3], args[4], args[5]],
+                [args[6], args[7], args[8]],
+            ]
+        )
     else:
         raise ValueError("Invalid number of arguments for 3x3 matrix")
 
 
-def mat4(*args) -> Matrix:
+def mat4(*args: Number) -> Matrix:
     """
     Create a 4x4 matrix from various inputs:
     - mat4() -> 4x4 identity matrix
@@ -834,20 +848,19 @@ def mat4(*args) -> Matrix:
     elif len(args) == 1:
         arg = args[0]
         if isinstance(arg, (int, float)):
-            return Matrix([
-                [arg, 0, 0, 0],
-                [0, arg, 0, 0],
-                [0, 0, arg, 0],
-                [0, 0, 0, arg]
-            ])
+            return Matrix(
+                [[arg, 0, 0, 0], [0, arg, 0, 0], [0, 0, arg, 0], [0, 0, 0, arg]]
+            )
         elif isinstance(arg, (list, tuple)):
             if len(arg) == 16:
-                return Matrix([
-                    [arg[0], arg[1], arg[2], arg[3]],
-                    [arg[4], arg[5], arg[6], arg[7]],
-                    [arg[8], arg[9], arg[10], arg[11]],
-                    [arg[12], arg[13], arg[14], arg[15]]
-                ])
+                return Matrix(
+                    [
+                        [arg[0], arg[1], arg[2], arg[3]],
+                        [arg[4], arg[5], arg[6], arg[7]],
+                        [arg[8], arg[9], arg[10], arg[11]],
+                        [arg[12], arg[13], arg[14], arg[15]],
+                    ]
+                )
             elif len(arg) == 4 and isinstance(arg[0], (list, tuple)):
                 return Matrix(arg)
             else:
@@ -855,14 +868,17 @@ def mat4(*args) -> Matrix:
         else:
             raise ValueError("Invalid input type for 4x4 matrix")
     elif len(args) == 16:
-        return Matrix([
-            [args[0], args[1], args[2], args[3]],
-            [args[4], args[5], args[6], args[7]],
-            [args[8], args[9], args[10], args[11]],
-            [args[12], args[13], args[14], args[15]]
-        ])
+        return Matrix(
+            [
+                [args[0], args[1], args[2], args[3]],
+                [args[4], args[5], args[6], args[7]],
+                [args[8], args[9], args[10], args[11]],
+                [args[12], args[13], args[14], args[15]],
+            ]
+        )
     else:
         raise ValueError("Invalid number of arguments for 4x4 matrix")
+
 
 # 2D Transformation utility functions
 def rotation_matrix_2d(angle_radians: float) -> Matrix:
@@ -872,7 +888,7 @@ def rotation_matrix_2d(angle_radians: float) -> Matrix:
     return Matrix([[cos_a, -sin_a], [sin_a, cos_a]])
 
 
-def scaling_matrix_2d(sx: float, sy: float = None) -> Matrix:
+def scaling_matrix_2d(sx: float, sy: Optional[float] = None) -> Matrix:
     """Create a 2D scaling matrix"""
     if sy is None:
         sy = sx
@@ -887,13 +903,26 @@ def translation_vector_2d(tx: float, ty: float) -> "Vector2":
 
 
 def transform_point_2d(
-    point: "Vector2", matrix: Matrix, translation: "Vector2" = None
-) -> "Vector2":
+    point: Union[List[Number], "Vector2"],
+    matrix: Matrix,
+    translation: Optional["Vector2"] = None,
+) -> Union[List[Number], "Vector2"]:
     """Transform a 2D point using a matrix and optional translation"""
-    result = matrix * point
-    if translation:
-        result += translation
-    return result
+    from .vector import Vector2
+
+    if isinstance(point, list):
+        if len(point) != 2:
+            raise ValueError("Point must have 2 components")
+        point_vec = Vector2(point[0], point[1])
+        result = matrix * point_vec
+        if translation:
+            result += translation
+        return [result.x, result.y]
+    else:
+        result = matrix * point
+        if translation:
+            result += translation
+        return result
 
 
 def shear_matrix_2d(shx: float = 0.0, shy: float = 0.0) -> Matrix:
@@ -963,18 +992,20 @@ def rotation_matrix_3d(axis: str, angle_radians: float) -> Matrix:
         raise ValueError("Axis must be 'x', 'y', or 'z'")
 
 
-def rotation_matrix_3d_arbitrary(axis: "Vector3", angle_radians: float) -> Matrix:
+def rotation_matrix_3d_arbitrary(
+    axis: Union[List[Number], "Vector3"], angle_radians: float
+) -> Matrix:
     """Create a 3D rotation matrix around an arbitrary axis"""
     from .vector import Vector3
 
-    if not isinstance(axis, Vector3):
-        if len(axis) == 3:
-            axis = Vector3(axis[0], axis[1], axis[2])
-        else:
-            raise ValueError("Axis must be a Vector3 or have 3 components")
+    if isinstance(axis, list):
+        if len(axis) != 3:
+            raise ValueError("Axis must have 3 components")
+        axis = Vector3(axis[0], axis[1], axis[2])
+    elif not isinstance(axis, Vector3):
+        raise ValueError("Axis must be a Vector3 or list of 3 numbers")
 
-    # Normalize the axis
-    axis = axis.normalized()
+    axis = axis.normalized
     x, y, z = axis.x, axis.y, axis.z
     c = np.cos(angle_radians)
     s = np.sin(angle_radians)
@@ -989,7 +1020,9 @@ def rotation_matrix_3d_arbitrary(axis: "Vector3", angle_radians: float) -> Matri
     )
 
 
-def scaling_matrix_3d(sx: float, sy: float = None, sz: float = None) -> Matrix:
+def scaling_matrix_3d(
+    sx: float, sy: Optional[float] = None, sz: Optional[float] = None
+) -> Matrix:
     """Create a 3D scaling matrix"""
     if sy is None:
         sy = sx
@@ -1006,13 +1039,26 @@ def translation_vector_3d(tx: float, ty: float, tz: float) -> "Vector3":
 
 
 def transform_point_3d(
-    point: "Vector3", matrix: Matrix, translation: "Vector3" = None
-) -> "Vector3":
+    point: Union[List[Number], "Vector3"],
+    matrix: Matrix,
+    translation: Optional["Vector3"] = None,
+) -> Union[List[Number], "Vector3"]:
     """Transform a 3D point using a matrix and optional translation"""
-    result = matrix * point
-    if translation:
-        result += translation
-    return result
+    from .vector import Vector3
+
+    if isinstance(point, list):
+        if len(point) != 3:
+            raise ValueError("Point must have 3 components")
+        point_vec = Vector3(point[0], point[1], point[2])
+        result = matrix * point_vec
+        if translation:
+            result += translation
+        return [result.x, result.y, result.z]
+    else:
+        result = matrix * point
+        if translation:
+            result += translation
+        return result
 
 
 def shear_matrix_3d(
@@ -1053,7 +1099,9 @@ def translation_matrix_4d(tx: float, ty: float, tz: float) -> Matrix:
     return Matrix([[1, 0, 0, tx], [0, 1, 0, ty], [0, 0, 1, tz], [0, 0, 0, 1]])
 
 
-def scaling_matrix_4d(sx: float, sy: float = None, sz: float = None) -> Matrix:
+def scaling_matrix_4d(
+    sx: float, sy: Optional[float] = None, sz: Optional[float] = None
+) -> Matrix:
     """Create a 4D homogeneous transformation matrix for 3D scaling"""
     if sy is None:
         sy = sx
@@ -1090,32 +1138,45 @@ def rotation_matrix_4d_z(angle_radians: float) -> Matrix:
 
 
 def transform_point_homogeneous(
-    point: "Vector3", transform_matrix: Matrix
-) -> "Vector3":
+    point: Union[List[Number], "Vector4"], transform_matrix: Matrix
+) -> Union[List[Number], "Vector4"]:
     """
     Transform a 3D point using a 4x4 homogeneous transformation matrix
 
     Args:
-        point: Vector3 point to transform
+        point: Vector4 point to transform or list of 4 numbers (homogeneous coords)
         transform_matrix: 4x4 homogeneous transformation matrix
 
     Returns:
-        Transformed Vector3 point
+        Transformed Vector4 point or list of 4 numbers
     """
     from .vector import Vector3, Vector4
 
-    # Convert to homogeneous coordinates (w=1)
-    homogeneous_point = Vector4(point.x, point.y, point.z, 1.0)
+    if isinstance(point, list):
+        if len(point) == 3:
+            # Convert 3D point to homogeneous
+            homogeneous_point = Vector4(point[0], point[1], point[2], 1.0)
+        elif len(point) == 4:
+            homogeneous_point = Vector4(point[0], point[1], point[2], point[3])
+        else:
+            raise ValueError("Point must have 3 or 4 components")
 
-    # Apply transformation
-    result = transform_matrix * homogeneous_point
+        # Apply transformation
+        result = transform_matrix * homogeneous_point
 
-    # Convert back to 3D (divide by w)
-    w = result.w
-    if abs(w) < 1e-10:
-        raise ValueError("Homogeneous coordinate w is too close to zero")
+        # Convert back to 3D (divide by w) or return 4D
+        w = result.w
+        if abs(w) < 1e-10:
+            raise ValueError("Homogeneous coordinate w is too close to zero")
 
-    return Vector3(result.x / w, result.y / w, result.z / w)
+        if len(point) == 3:
+            return [result.x / w, result.y / w, result.z / w]
+        else:
+            return [result.x, result.y, result.z, result.w]
+    else:
+        # Apply transformation
+        result = transform_matrix * point
+        return result
 
 
 def perspective_projection_matrix(
@@ -1170,7 +1231,11 @@ def orthographic_projection_matrix(
     )
 
 
-def look_at_matrix(eye: "Vector3", target: "Vector3", up: "Vector3") -> Matrix:
+def look_at_matrix(
+    eye: Union[List[Number], "Vector3"],
+    target: Union[List[Number], "Vector3"],
+    up: Union[List[Number], "Vector3"],
+) -> Matrix:
     """
     Create a view matrix that looks from 'eye' position toward 'target' position
 
@@ -1184,11 +1249,27 @@ def look_at_matrix(eye: "Vector3", target: "Vector3", up: "Vector3") -> Matrix:
     """
     from .vector import Vector3
 
+    # Convert lists to Vector3 if needed
+    if isinstance(eye, list):
+        if len(eye) != 3:
+            raise ValueError("Eye position must have 3 components")
+        eye = Vector3(eye[0], eye[1], eye[2])
+
+    if isinstance(target, list):
+        if len(target) != 3:
+            raise ValueError("Target position must have 3 components")
+        target = Vector3(target[0], target[1], target[2])
+
+    if isinstance(up, list):
+        if len(up) != 3:
+            raise ValueError("Up vector must have 3 components")
+        up = Vector3(up[0], up[1], up[2])
+
     # Forward direction
-    forward = (target - eye).normalized()
+    forward = (target - eye).normalized
 
     # Right direction
-    right = forward.cross(up).normalized()
+    right = forward.cross(up).normalized
 
     # Corrected up direction
     new_up = right.cross(forward)
