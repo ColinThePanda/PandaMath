@@ -24,7 +24,7 @@ Homepage = "https://github.com/ColinThePanda/PandaMath"
 Bug_Tracker = "https://github.com/ColinThePanda/PandaMath/issues"
 
 [tool.setuptools.packages.find]
-where = ["panda_math"]
+where = ["src"]
 
 [tool.setuptools.package-dir]
-"" = "panda_math"
+"" = "src"
