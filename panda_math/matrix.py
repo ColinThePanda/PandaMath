@@ -8,11 +8,9 @@ from typing import (
     TypeVar,
     Tuple,
     Callable,
-    Dict,
     overload,
     Sequence,
 )
-from collections.abc import Sequence
 
 # Import Vector only for type checking to avoid circular import at runtime
 from typing import TYPE_CHECKING

@@ -11,8 +11,8 @@ from typing import (
     Any,
     TYPE_CHECKING,
     Type,
+    Sequence
 )
-from collections.abc import Sequence
 from abc import ABC, abstractmethod
 
 if TYPE_CHECKING:

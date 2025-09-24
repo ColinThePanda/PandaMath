@@ -12,9 +12,9 @@ from typing import (
     TYPE_CHECKING,
     Type,
     overload,
+    Sequence
 )
-from collections.abc import Sequence
-from abc import ABC, abstractmethod
+from abc import ABC
 
 if TYPE_CHECKING:
     from .matrix import Matrix

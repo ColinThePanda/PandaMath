@@ -532,9 +532,6 @@ eigenvalues, eigenvectors = covariance.eigenvectors()
 - `row_echelon_form() -> Matrix` - Convert to row echelon form
 - `reduced_row_echelon_form() -> Matrix` - Convert to RREF
 - `apply(func: Callable) -> Matrix` - Apply function to all elements
-
-### Matrix Class Methods
-
 - `Matrix.identity(size: int) -> Matrix` - Create identity matrix
 - `Matrix.from_rows(*rows) -> Matrix` - Create from row vectors
 - `Matrix.from_cols(*cols) -> Matrix` - Create from column vectors
