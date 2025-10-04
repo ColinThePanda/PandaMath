@@ -5,6 +5,7 @@ A high-performance Python library for vector and matrix operations, designed spe
 ## Features
 
 - **Complete Vector Support**: 2D, 3D, and 4D vector classes with full mathematical operations
+- **Integer Vector Types**: IVector2, IVector3, IVector4 for grid-based and discrete operations
 - **Comprehensive Matrix Operations**: Full-featured Matrix class with linear algebra support
 - **Rich Operator Overloading**: Natural mathematical syntax with `+`, `-`, `*`, `/`, `//`, `%`, `**`
 - **NumPy Integration**: Seamless conversion to/from NumPy arrays
@@ -23,12 +24,16 @@ pip install panda-math
 ## Quick Start
 
 ```python
-from panda_math import Vector2, Vector3, Vector4, Matrix, vec2, vec3, vec4
+from panda_math import Vector2, Vector3, Vector4, Matrix, vec2, vec3, vec4, ivec2, ivec3
 
 # Create vectors
 v1 = Vector2(3, 4)
 v2 = vec3(1, 2, 3)  # Convenient aliases
 v3 = Vector4([1, 0, 0, 1])  # From iterable
+
+# Integer vectors for grid operations
+grid_pos = ivec2(5, 10)
+voxel = ivec3(1, 2, 3)
 
 # Create matrices
 m1 = Matrix([[1, 2], [3, 4]])
@@ -39,6 +44,9 @@ m3 = Matrix([v2, Vector3(4, 5, 6)])  # From vectors
 result = v1 + Vector2(1, 1)  # Vector2(4, 5)
 scaled = v2 * 2.5           # Vector3(2.5, 5.0, 7.5)
 magnitude = v2.magnitude    # 3.74...
+
+# Integer operations
+next_tile = grid_pos + ivec2(1, 0)  # IVector2(6, 10)
 
 # Matrix operations
 transformed = m1 * v1       # Matrix-vector multiplication
@@ -53,59 +61,130 @@ dot_product = v2.dot(Vector3(1, 1, 1))
 
 ## Vector Classes
 
-### Vector2
+### Vector2 and IVector2
 
-Perfect for 2D graphics, UI positioning, and planar mathematics.
+Perfect for 2D graphics, UI positioning, and planar mathematics. Use `IVector2` for grid-based operations where integer precision is required.
 
 ```python
-from panda_math import Vector2
+from panda_math import Vector2, IVector2, ivec2
 
-# Creation
-pos = Vector2(10, 20)
+# Float vectors for continuous positions
+pos = Vector2(10.5, 20.3)
 velocity = Vector2([5, -3])  # From list/tuple
 
+# Integer vectors for grid-based operations
+grid_pos = IVector2(5, 10)
+tile_coords = ivec2(3, 7)    # Convenient alias
+
 # Properties
-print(pos.x, pos.y)          # 10 20
-print(pos.magnitude)         # 22.36...
+print(pos.x, pos.y)          # 10.5 20.3
+print(pos.magnitude)         # 22.88...
 print(len(pos))             # 2
 
 # Operations
 new_pos = pos + velocity * 0.016  # Frame-based movement
 normalized_vel = velocity.normalize()
+
+# Integer operations maintain integer type
+next_tile = tile_coords + IVector2(1, 0)  # IVector2(4, 7)
+grid_offset = tile_coords // 2            # IVector2(1, 3)
+
+# Use cases for integer vectors
+# - Grid coordinates in tile-based games
+# - Pixel coordinates in image processing
+# - Array indices
+# - Discrete simulation steps
 ```
 
-### Vector3
+### Vector3 and IVector3
 
-Essential for 3D graphics, physics simulations, and spatial calculations.
+Essential for 3D graphics, physics simulations, and spatial calculations. Use `IVector3` for voxel grids and discrete 3D coordinates.
 
 ```python
-from panda_math import Vector3
+from panda_math import Vector3, IVector3, ivec3
 
-# 3D operations
+# 3D operations with floats
 forward = Vector3(0, 0, 1)
 up = Vector3(0, 1, 0)
 right = forward.cross(up)    # Cross product: Vector3(1, 0, 0)
+
+# Integer vectors for voxel/grid operations
+voxel_pos = IVector3(10, 5, -3)
+chunk_coords = ivec3(2, 0, 1)  # Convenient alias
 
 # Lighting calculations
 light_dir = Vector3(1, 1, 1).normalize()
 surface_normal = Vector3(0, 1, 0)
 intensity = light_dir.dot(surface_normal)
+
+# Integer grid navigation
+neighbor = voxel_pos + IVector3(1, 0, 0)  # IVector3(11, 5, -3)
+chunk_local = voxel_pos % 16              # IVector3(10, 5, 13) for 16x16x16 chunks
+
+# Use cases for integer vectors
+# - Voxel coordinates in Minecraft-style games
+# - 3D grid navigation
+# - Chunk management systems
+# - Discrete 3D cellular automata
 ```
 
-### Vector4
+### Vector4 and IVector4
 
-Ideal for homogeneous coordinates, quaternions, and RGBA colors.
+Ideal for homogeneous coordinates, quaternions, and RGBA colors. Use `IVector4` for integer color values (0-255 range) and discrete 4D data.
 
 ```python
-from panda_math import Vector4
+from panda_math import Vector4, IVector4, ivec4
 
-# Homogeneous coordinates
+# Homogeneous coordinates (floats)
 point = Vector4(10, 20, 30, 1)
 direction = Vector4(0, 1, 0, 0)
 
-# Color manipulation
+# Float color manipulation (0.0-1.0 range)
 red = Vector4(1.0, 0.0, 0.0, 1.0)  # RGBA
 transparent_red = red * Vector4(1, 1, 1, 0.5)
+
+# Integer vectors for RGBA color manipulation (0-255 range)
+pixel_color = IVector4(255, 128, 64, 255)
+darker = pixel_color // 2  # IVector4(127, 64, 32, 127)
+blended = (pixel_color + ivec4(0, 50, 0, 0)) # Add green
+
+# Use cases for integer vectors
+# - Pixel color values in image processing
+# - 8-bit or 16-bit color channels
+# - Discrete 4D grid coordinates
+# - Integer-based RGBA operations
+```
+
+## Integer Vector Features
+
+Integer vectors (`IVector2`, `IVector3`, `IVector4`) provide all the same operations as their float counterparts but maintain integer precision:
+
+```python
+from panda_math import IVector2, IVector3, IVector4
+
+# All standard operations work with integers
+iv1 = IVector3(10, 20, 30)
+iv2 = IVector3(3, 4, 5)
+
+# Arithmetic
+addition = iv1 + iv2        # IVector3(13, 24, 35)
+subtraction = iv1 - iv2     # IVector3(7, 16, 25)
+multiplication = iv1 * 2    # IVector3(20, 40, 60)
+
+# Floor division is particularly useful
+division = iv1 // iv2       # IVector3(3, 5, 6)
+modulo = iv1 % iv2          # IVector3(1, 0, 0)
+
+# Comparisons
+print(iv1 > iv2)           # True (all components greater)
+
+# Properties (return floats where appropriate)
+mag = iv1.magnitude        # 37.416... (float)
+normalized = iv1.normalize()  # Vector3 (float, not integer)
+
+# Conversion between float and integer vectors
+float_vec = Vector3(10.7, 20.3, 30.9)
+int_vec = IVector3(int(float_vec.x), int(float_vec.y), int(float_vec.z))
 ```
 
 ## Matrix Class
@@ -345,11 +424,14 @@ print(m1 == m2)           # True (matrices are equal)
 
 ```python
 import numpy as np
-from panda_math import Vector3, Matrix
+from panda_math import Vector3, IVector3, Matrix
 
 # Convert vectors to NumPy
 v = Vector3(1, 2, 3)
 array = v.to_numpy()      # np.array([1, 2, 3])
+
+iv = IVector3(1, 2, 3)
+int_array = iv.to_numpy()  # np.array([1, 2, 3], dtype=int)
 
 # Convert matrices to NumPy
 m = Matrix([[1, 2], [3, 4]])
@@ -358,6 +440,7 @@ np_matrix = m.to_numpy()  # np.array([[1, 2], [3, 4]])
 # Create from NumPy
 np_array = np.array([4, 5, 6, 7])
 v2 = Vector3.from_numpy(np_array)  # Uses first 3 elements
+iv2 = IVector3.from_numpy(np_array)  # Integer version
 
 np_matrix = np.array([[5, 6], [7, 8]])
 m2 = Matrix.from_numpy(np_matrix)
@@ -397,10 +480,12 @@ doubled = matrix.apply(lambda x: x * 2)
 
 ## Common Use Cases
 
-### Game Development
+### Game Development with Integer Vectors
 
 ```python
-# Player movement with transformation matrices
+from panda_math import Vector3, IVector3, rotation_matrix_3d
+
+# Player movement with transformation matrices (float precision)
 player_pos = Vector3(0, 0, 0)
 player_rotation = rotation_matrix_3d('y', np.pi / 4)  # 45° turn
 movement_input = Vector3(0, 0, 1)  # Forward
@@ -409,12 +494,42 @@ movement_input = Vector3(0, 0, 1)  # Forward
 world_movement = player_rotation * movement_input
 new_position = player_pos + world_movement * speed * delta_time
 
-# Camera system
-camera_transform = look_at_matrix(
-    Vector3(player_pos.x, player_pos.y + 5, player_pos.z - 10),
-    player_pos,
-    Vector3(0, 1, 0)
+# Grid-based world management (integer precision)
+chunk_size = 16
+player_chunk = IVector3(
+    int(player_pos.x) // chunk_size,
+    int(player_pos.y) // chunk_size,
+    int(player_pos.z) // chunk_size
 )
+
+# Load surrounding chunks
+for dx in [-1, 0, 1]:
+    for dy in [-1, 0, 1]:
+        for dz in [-1, 0, 1]:
+            neighbor_chunk = player_chunk + IVector3(dx, dy, dz)
+            load_chunk(neighbor_chunk)
+```
+
+### Voxel World Generation
+
+```python
+from panda_math import IVector3
+
+# Generate a voxel structure using integer coordinates
+def generate_voxel_sphere(center: IVector3, radius: int):
+    voxels = []
+    for x in range(-radius, radius + 1):
+        for y in range(-radius, radius + 1):
+            for z in range(-radius, radius + 1):
+                offset = IVector3(x, y, z)
+                pos = center + offset
+                # Use integer arithmetic for efficiency
+                if (x*x + y*y + z*z) <= radius*radius:
+                    voxels.append(pos)
+    return voxels
+
+# Create a sphere at chunk coordinates
+sphere_voxels = generate_voxel_sphere(IVector3(8, 8, 8), 5)
 ```
 
 ### Physics Simulations
@@ -458,6 +573,34 @@ vertex = Vector3(1, 1, 1)
 screen_space = transform_point_homogeneous(vertex, mvp)
 ```
 
+### Image Processing with Integer Vectors
+
+```python
+from panda_math import IVector4
+
+# Process pixel colors
+def adjust_brightness(pixel: IVector4, factor: int) -> IVector4:
+    """Adjust pixel brightness while maintaining alpha"""
+    adjusted = IVector4(
+        min(255, pixel.x + factor),
+        min(255, pixel.y + factor),
+        min(255, pixel.z + factor),
+        pixel.w  # Keep alpha unchanged
+    )
+    return adjusted
+
+# Blend two pixels
+def blend_pixels(p1: IVector4, p2: IVector4, ratio: float) -> IVector4:
+    """Blend two pixels based on ratio (0.0 to 1.0)"""
+    r1, r2 = int(ratio * 256), int((1 - ratio) * 256)
+    return IVector4(
+        (p1.x * r1 + p2.x * r2) // 256,
+        (p1.y * r1 + p2.y * r2) // 256,
+        (p1.z * r1 + p2.z * r2) // 256,
+        (p1.w * r1 + p2.w * r2) // 256
+    )
+```
+
 ### Linear Algebra Applications
 
 ```python
@@ -487,10 +630,12 @@ eigenvalues, eigenvectors = covariance.eigenvectors()
 1. **Use in-place operations** (`+=`, `*=`, etc.) when possible to avoid creating new objects
 2. **Normalize vectors once** and reuse when the direction is needed multiple times
 3. **Use appropriate vector dimensions** - don't use Vector4 when Vector2 suffices
-4. **Leverage NumPy conversion** for bulk operations on many vectors
-5. **Pre-compute transformation matrices** for repeated use
-6. **Use homogeneous coordinates** for complex 3D transformations
-7. **Cache matrix inverses** if used multiple times
+4. **Choose integer vs float vectors wisely** - use integer vectors for grid/voxel operations for better performance and memory efficiency
+5. **Leverage NumPy conversion** for bulk operations on many vectors
+6. **Pre-compute transformation matrices** for repeated use
+7. **Use homogeneous coordinates** for complex 3D transformations
+8. **Cache matrix inverses** if used multiple times
+9. **Use floor division** (`//`) with integer vectors for chunk/grid calculations
 
 ## API Reference
 
@@ -507,6 +652,13 @@ eigenvalues, eigenvectors = covariance.eigenvectors()
 - `to_numpy() -> np.ndarray` - Convert to NumPy array
 - `from_numpy(array: np.ndarray) -> T` - Create from NumPy array
 - `from_iterable(iterable: Iterable) -> T` - Create from any iterable
+
+### Vector Classes
+
+- **Vector2, IVector2** - 2D vectors (float/int)
+- **Vector3, IVector3** - 3D vectors (float/int)
+- **Vector4, IVector4** - 4D vectors (float/int)
+- **Aliases**: `vec2`, `vec3`, `vec4`, `ivec2`, `ivec3`, `ivec4`
 
 ### Vector3 Specific
 
@@ -572,6 +724,12 @@ eigenvalues, eigenvectors = covariance.eigenvectors()
 #### Utilities
 
 - `interpolate_matrices(a: Matrix, b: Matrix, t: float) -> Matrix`
+- `vec2_to_vec3(v: Vector2, z: float = 0.0) -> Vector3`
+- `vec2_to_vec4(v: Vector2, z: float = 0.0, w: float = 1.0) -> Vector4`
+- `vec3_to_vec2(v: Vector3) -> Vector2`
+- `vec3_to_vec4(v: Vector3, w: float = 1.0) -> Vector4`
+- `vec4_to_vec2(v: Vector4) -> Vector2`
+- `vec4_to_vec3(v: Vector4) -> Vector3`
 
 ## Requirements
 
