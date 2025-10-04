@@ -63,6 +63,11 @@ class VectorBase(Generic[T], Sequence[float], ABC):
 
     def to_numpy(self) -> np.ndarray:
         return np.array(list(self))
+    
+    def to_bytes(self) -> bytes:
+        """Convert vector to bytes for GLSL shader uniforms (little-endian float32)"""
+        import struct
+        return struct.pack(f'<{len(self)}f', *self)
 
     def _get_component(self, char: str) -> float:
         components = vars(self)

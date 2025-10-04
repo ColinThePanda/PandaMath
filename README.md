@@ -446,6 +446,28 @@ np_matrix = np.array([[5, 6], [7, 8]])
 m2 = Matrix.from_numpy(np_matrix)
 ```
 
+### Shader Uniform Data
+
+```python
+from panda_math import Vector2, Vector3, Vector4
+
+# Convert vectors to bytes for GLSL shader uniforms
+# Data is formatted as little-endian 32-bit floats (IEEE 754)
+
+v2 = Vector2(1.0, 2.0)
+v2_bytes = v2.to_bytes()  # b'\x00\x00\x80?\x00\x00\x00@' (8 bytes)
+
+v3 = Vector3(1.0, 2.0, 3.0)
+v3_bytes = v3.to_bytes()  # Returns 12 bytes (3 × 4 bytes)
+
+v4 = Vector4(1.0, 0.5, 0.25, 1.0)
+v4_bytes = v4.to_bytes()  # Returns 16 bytes (4 × 4 bytes)
+
+# Integer vectors are converted to float32 format
+iv = IVector3(1, 2, 3)
+iv_bytes = iv.to_bytes()  # Converts to float: b'\x00\x00\x80?...' (12 bytes)
+```
+
 ### Conversion Between Dimensions
 
 ```python
