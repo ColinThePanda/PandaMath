@@ -1,11 +1,11 @@
 # Vector classes
-from .vector import Vector2, Vector3, Vector4, VectorBase
+from .vector import Vector2, Vector3, Vector4, VectorBase, IVector2, IVector3, IVector4
 
 # Matrix class and constants
 from .matrix import Matrix, IDENTITY_2D, IDENTITY_3D, IDENTITY_4D
 
 # Convenient vector aliases (if they exist in vector.py)
-from .vector import vec2, vec3, vec4
+from .vector import vec2, vec3, vec4, ivec2, ivec3, ivec4
 
 # All transformation functions should be in either vector.py or matrix.py
 # Update these imports based on where you actually placed the functions:
@@ -48,19 +48,23 @@ from .vector import (
     vec3_to_vec4,
     vec4_to_vec2,
     vec4_to_vec3,
+    ivec2_to_ivec3,
+    ivec2_to_ivec4,
+    ivec3_to_ivec2,
+    ivec3_to_ivec4,
+    ivec4_to_ivec2,
+    ivec4_to_ivec3,
 )
-
-# Version info
-__version__ = "0.1.0"  # Match your setup.py version
-__author__ = "Colin Politi"
-__email__ = "urboycolinthepanda@gmail.com"
 
 # Public API
 __all__ = [
     # Vector classes
     "Vector2",
+    "IVector2",
     "Vector3",
+    "IVector3",
     "Vector4",
+    "IVector4",
     "VectorBase",
     # Matrix class
     "Matrix",
@@ -70,8 +74,11 @@ __all__ = [
     "IDENTITY_4D",
     # Vector aliases
     "vec2",
+    "ivec2",
     "vec3",
+    "ivec3",
     "vec4",
+    "ivec4",
     # 2D transformations
     "rotation_matrix_2d",
     "scaling_matrix_2d",
@@ -103,5 +110,11 @@ __all__ = [
     "vec3_to_vec4",
     "vec4_to_vec2",
     "vec4_to_vec3",
+    "ivec2_to_ivec3",
+    "ivec2_to_ivec4",
+    "ivec3_to_ivec2",
+    "ivec3_to_ivec4",
+    "ivec4_to_ivec2",
+    "ivec4_to_ivec3",
     "interpolate_matrices",
 ]
