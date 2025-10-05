@@ -18,13 +18,13 @@ from abc import ABC, abstractmethod
 if TYPE_CHECKING:
     from .matrix import Matrix
 
-T = TypeVar("T", bound="VectorBase")
+T = TypeVar("T", bound="Vector")
 NumT = TypeVar("NumT", int, float)
 
 Number = Union[int, float]
 
 
-class VectorBase(Generic[T], Sequence[float], ABC):
+class Vector(Generic[T], Sequence[float], ABC):
     """Base class for all vector implementations"""
 
     @classmethod
@@ -127,7 +127,7 @@ class VectorBase(Generic[T], Sequence[float], ABC):
         return self.reverse()
 
 
-class Vector2(VectorBase["Vector2"]):
+class Vector2(Vector["Vector2"]):
     @classmethod
     def _dimension(cls) -> int:
         return 2
@@ -139,17 +139,26 @@ class Vector2(VectorBase["Vector2"]):
     def __init__(self, *args):
         self._x: float
         self._y: float
-        if len(args) == 2:
-            self._x, self._y = map(self._vector_type(), args)
-        elif len(args) == 1 and isinstance(args[0], Iterable):
-            self._x, self._y = map(self._vector_type(), args[0])
-        elif len(args) == 1 and isinstance(args[0], Number):
-            self._x = self._y = self._vector_type()(args[0])
-        elif len(args) == 0:
+        
+        # Flatten all arguments into a list of scalars
+        flattened = []
+        for arg in args:
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+                flattened.extend(arg)
+            elif isinstance(arg, Number):
+                flattened.append(arg)
+            else:
+                raise TypeError(f"Invalid argument type for Vector2: {type(arg)}")
+        
+        if len(flattened) == 0:
             self._x = self._y = self._vector_type()(0)
+        elif len(flattened) == 1:
+            self._x = self._y = self._vector_type()(flattened[0])
+        elif len(flattened) >= 2:
+            self._x, self._y = map(self._vector_type(), flattened[:2])
         else:
             raise TypeError("Invalid arguments for Vector2")
-
+        
     @property
     def x(self) -> float:
         return self._x
@@ -456,19 +465,29 @@ class IVector2(Vector2):
     def __init__(self, *args):
         self._x: int
         self._y: int
-        if len(args) == 2:
-            self._x, self._y = map(self._vector_type(), args)
-        elif len(args) == 1 and isinstance(args[0], Iterable):
-            self._x, self._y = map(self._vector_type(), args[0])
-        elif len(args) == 1 and isinstance(args[0], Number):
-            self._x = self._y = self._vector_type()(args[0])
-        elif len(args) == 0:
+        
+        # Flatten all arguments into a list of scalars
+        flattened = []
+        for arg in args:
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+                flattened.extend(arg)
+            elif isinstance(arg, Number):
+                flattened.append(arg)
+            else:
+                raise TypeError(f"Invalid argument type for IVector2: {type(arg)}")
+        
+        if len(flattened) == 0:
             self._x = self._y = self._vector_type()(0)
+        elif len(flattened) == 1:
+            self._x = self._y = self._vector_type()(flattened[0])
+        elif len(flattened) >= 2:
+            self._x, self._y = map(self._vector_type(), flattened[:2])
         else:
             raise TypeError("Invalid arguments for IVector2")
 
 
-class Vector3(VectorBase["Vector3"]):
+
+class Vector3(Vector["Vector3"]):
     @classmethod
     def _dimension(cls) -> int:
         return 3
@@ -481,14 +500,23 @@ class Vector3(VectorBase["Vector3"]):
         self._x: float
         self._y: float
         self._z: float
-        if len(args) == 3:
-            self._x, self._y, self._z = map(self._vector_type(), args)
-        elif len(args) == 1 and isinstance(args[0], Iterable):
-            self._x, self._y, self._z = map(self._vector_type(), args[0])
-        elif len(args) == 1 and isinstance(args[0], Number):
-            self._x = self._y = self._z = self._vector_type()(args[0])
-        elif len(args) == 0:
+        
+        # Flatten all arguments into a list of scalars
+        flattened = []
+        for arg in args:
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+                flattened.extend(arg)
+            elif isinstance(arg, Number):
+                flattened.append(arg)
+            else:
+                raise TypeError(f"Invalid argument type for Vector3: {type(arg)}")
+        
+        if len(flattened) == 0:
             self._x = self._y = self._z = self._vector_type()(0)
+        elif len(flattened) == 1:
+            self._x = self._y = self._z = self._vector_type()(flattened[0])
+        elif len(flattened) >= 3:
+            self._x, self._y, self._z = map(self._vector_type(), flattened[:3])
         else:
             raise TypeError("Invalid arguments for Vector3")
 
@@ -851,19 +879,28 @@ class IVector3(Vector3):
         self._x: int
         self._y: int
         self._z: int
-        if len(args) == 3:
-            self._x, self._y, self._z = map(self._vector_type(), args)
-        elif len(args) == 1 and isinstance(args[0], Iterable):
-            self._x, self._y, self._z = map(self._vector_type(), args[0])
-        elif len(args) == 1 and isinstance(args[0], Number):
-            self._x = self._y = self._z = self._vector_type()(args[0])
-        elif len(args) == 0:
+        
+        # Flatten all arguments into a list of scalars
+        flattened = []
+        for arg in args:
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+                flattened.extend(arg)
+            elif isinstance(arg, Number):
+                flattened.append(arg)
+            else:
+                raise TypeError(f"Invalid argument type for IVector3: {type(arg)}")
+        
+        if len(flattened) == 0:
             self._x = self._y = self._z = self._vector_type()(0)
+        elif len(flattened) == 1:
+            self._x = self._y = self._z = self._vector_type()(flattened[0])
+        elif len(flattened) >= 3:
+            self._x, self._y, self._z = map(self._vector_type(), flattened[:3])
         else:
-            raise TypeError("Invalid arguments for IVector2")
+            raise TypeError("Invalid arguments for IVector3")
 
 
-class Vector4(VectorBase["Vector4"]):
+class Vector4(Vector["Vector4"]):
 
     @classmethod
     def _dimension(cls) -> int:
@@ -878,14 +915,23 @@ class Vector4(VectorBase["Vector4"]):
         self._y: float
         self._z: float
         self._w: float
-        if len(args) == 4:
-            self._x, self._y, self._z, self._w = map(self._vector_type(), args)
-        elif len(args) == 1 and isinstance(args[0], Union[Iterable, "Vector4"]):
-            self._x, self._y, self._z, self._w = map(self._vector_type(), args[0])
-        elif len(args) == 1 and isinstance(args[0], Number):
-            self._x = self._y = self._z = self._w = self._vector_type()(args[0])
-        elif len(args) == 0:
+        
+        # Flatten all arguments into a list of scalars
+        flattened = []
+        for arg in args:
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+                flattened.extend(arg)
+            elif isinstance(arg, Number):
+                flattened.append(arg)
+            else:
+                raise TypeError(f"Invalid argument type for Vector4: {type(arg)}")
+        
+        if len(flattened) == 0:
             self._x = self._y = self._z = self._w = self._vector_type()(0)
+        elif len(flattened) == 1:
+            self._x = self._y = self._z = self._w = self._vector_type()(flattened[0])
+        elif len(flattened) >= 4:
+            self._x, self._y, self._z, self._w = map(self._vector_type(), flattened[:4])
         else:
             raise TypeError("Invalid arguments for Vector4")
 
@@ -1364,16 +1410,26 @@ class IVector4(Vector4):
         self._y: int
         self._z: int
         self._w: int
-        if len(args) == 4:
-            self._x, self._y, self._z, self._w = map(self._vector_type(), args)
-        elif len(args) == 1 and isinstance(args[0], Iterable):
-            self._x, self._y, self._z, self._w = map(self._vector_type(), args[0])
-        elif len(args) == 1 and isinstance(args[0], Number):
-            self._x = self._y = self._z = self._w = self._vector_type()(args[0])
-        elif len(args) == 0:
+        
+        # Flatten all arguments into a list of scalars
+        flattened = []
+        for arg in args:
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+                flattened.extend(arg)
+            elif isinstance(arg, Number):
+                flattened.append(arg)
+            else:
+                raise TypeError(f"Invalid argument type for IVector4: {type(arg)}")
+        
+        if len(flattened) == 0:
             self._x = self._y = self._z = self._w = self._vector_type()(0)
+        elif len(flattened) == 1:
+            self._x = self._y = self._z = self._w = self._vector_type()(flattened[0])
+        elif len(flattened) >= 4:
+            self._x, self._y, self._z, self._w = map(self._vector_type(), flattened[:4])
         else:
-            raise TypeError("Invalid arguments for IVector2")
+            raise TypeError("Invalid arguments for IVector4")
+
 
 
 # Provide convenient aliases
@@ -1391,63 +1447,3 @@ ivec3 = IVector3
 IVec4 = IVector4
 ivec4 = IVector4
 
-
-# Add utility functions for conversion between different vector dimensions
-def vec2_to_vec3(v: Vector2, z: float = 0.0) -> Vector3:
-    """Convert a Vector2 to a Vector3 by adding the z component"""
-    return Vector3(v.x, v.y, z)
-
-
-def vec2_to_vec4(v: Vector2, z: float = 0.0, w: float = 1.0) -> Vector4:
-    """Convert a Vector2 to a Vector4 by adding the z and w components"""
-    return Vector4(v.x, v.y, z, w)
-
-
-def vec3_to_vec2(v: Vector3) -> Vector2:
-    """Convert a Vector3 to a Vector2 by dropping the z component"""
-    return Vector2(v.x, v.y)
-
-
-def vec3_to_vec4(v: Vector3, w: float = 1.0) -> Vector4:
-    """Convert a Vector3 to a Vector4 by adding the w component"""
-    return Vector4(v.x, v.y, v.z, w)
-
-
-def vec4_to_vec2(v: Vector4) -> Vector2:
-    """Convert a Vector4 to a Vector2 by dropping the z and w components"""
-    return Vector2(v.x, v.y)
-
-
-def vec4_to_vec3(v: Vector4) -> Vector3:
-    """Convert a Vector4 to a Vector3 by dropping the w component"""
-    return Vector3(v.x, v.y, v.z)
-
-
-def ivec2_to_ivec3(v: IVector2, z: int = 0) -> IVector3:
-    """Convert a IVector2 to a IVector3 by adding the z component"""
-    return IVector3(v.x, v.y, z)
-
-
-def ivec2_to_ivec4(v: IVector2, z: int = 0, w: int = 1) -> IVector4:
-    """Convert a IVector2 to a IVector4 by adding the z and w component"""
-    return IVector4(v.x, v.y, z, w)
-
-
-def ivec3_to_ivec2(v: IVector3) -> IVector2:
-    """Convert a IVector3 to a IVector2 by dropping the z component"""
-    return IVector2(v.x, v.y)
-
-
-def ivec3_to_ivec4(v: IVector3, w: int = 1) -> IVector4:
-    """Convert a IVector3 to a IVector4 by adding the w component"""
-    return IVector4(v.x, v.y, v.z, w)
-
-
-def ivec4_to_ivec2(v: IVector4) -> IVector2:
-    """Convert a IVector4 to a IVector2 by dropping the z and w component"""
-    return IVector2(v.x, v.y)
-
-
-def ivec4_to_ivec3(v: IVector4) -> IVector3:
-    """Convert a IVector4 to a IVector3 by dropping the w component"""
-    return IVector3(v.x, v.y, v.z)

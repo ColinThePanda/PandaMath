@@ -5,6 +5,7 @@ A high-performance Python library for vector and matrix operations, designed spe
 ## Features
 
 - **Complete Vector Support**: 2D, 3D, and 4D vector classes with full mathematical operations
+- **GLSL-Style Construction**: Mix vectors, iterables, and scalars freely - `vec3(vec2(1, 2), 3)` or `vec4(vec2(1, 2), vec2(3, 4))`
 - **Integer Vector Types**: IVector2, IVector3, IVector4 for grid-based and discrete operations
 - **Comprehensive Matrix Operations**: Full-featured Matrix class with linear algebra support
 - **Rich Operator Overloading**: Natural mathematical syntax with `+`, `-`, `*`, `/`, `//`, `%`, `**`
@@ -26,14 +27,20 @@ pip install panda-math
 ```python
 from panda_math import Vector2, Vector3, Vector4, Matrix, vec2, vec3, vec4, ivec2, ivec3
 
-# Create vectors
+# Create vectors - multiple ways!
 v1 = Vector2(3, 4)
 v2 = vec3(1, 2, 3)  # Convenient aliases
 v3 = Vector4([1, 0, 0, 1])  # From iterable
 
+# Mix vectors and scalars (GLSL-style)
+v4 = vec3(vec2(1, 2), 3)        # Vector3(1, 2, 3)
+v5 = vec4(vec2(1, 2), vec2(3, 4))  # Vector4(1, 2, 3, 4)
+v6 = vec3([1, 2], 5)            # Vector3(1, 2, 5)
+
 # Integer vectors for grid operations
 grid_pos = ivec2(5, 10)
 voxel = ivec3(1, 2, 3)
+color = ivec4(ivec3(255, 128, 64), 255)  # RGBA from RGB + alpha
 
 # Create matrices
 m1 = Matrix([[1, 2], [3, 4]])
@@ -61,6 +68,52 @@ dot_product = v2.dot(Vector3(1, 1, 1))
 
 ## Vector Classes
 
+### Flexible Vector Construction (GLSL-Style)
+
+Panda Math supports flexible vector construction, allowing you to mix vectors, iterables, and scalars in any combination - just like GLSL shaders!
+
+```python
+from panda_math import vec2, vec3, vec4, ivec2, ivec3, ivec4
+
+# Build larger vectors from smaller ones
+v2 = vec2(1, 2)
+v3_from_v2 = vec3(v2, 3)           # Vector3(1, 2, 3)
+v4_from_v2s = vec4(vec2(1, 2), vec2(3, 4))  # Vector4(1, 2, 3, 4)
+
+# Mix iterables and scalars
+v3_mixed = vec3([1, 2], 5)         # Vector3(1, 2, 5)
+v4_mixed = vec4([1, 2, 3], 10)     # Vector4(1, 2, 3, 10)
+
+# Extract components with swizzling, then rebuild
+pos = vec3(10, 20, 30)
+new_pos = vec3(pos.xy, 0)          # Vector3(10, 20, 0)
+flipped = vec3(pos.z, pos.xy)      # Vector3(30, 10, 20)
+
+# Downcast (automatically takes first N components)
+v3 = vec3(10, 20, 30)
+v2_from_v3 = vec2(v3)              # Vector2(10, 20) - z dropped
+v2_from_v4 = vec2(vec4(1, 2, 3, 4))  # Vector2(1, 2)
+
+# Integer vectors work the same way
+color_rgb = ivec3(255, 128, 64)
+color_rgba = ivec4(color_rgb, 255)  # IVector4(255, 128, 64, 255)
+
+# Multiple vectors and scalars
+complex = vec4(vec2(1, 2), 5, 10)  # Vector4(1, 2, 5, 10)
+chain = vec4(v2, v2)                # Vector4(1, 2, 1, 2)
+
+# Works with any iterable
+from_tuple = vec3((1, 2), 3)       # Vector3(1, 2, 3)
+from_list = vec4([1, 2, 3, 4])     # Vector4(1, 2, 3, 4)
+```
+
+This feature makes it easy to:
+- Convert between vector dimensions
+- Build colors from RGB + alpha
+- Extend 2D positions to 3D
+- Create homogeneous coordinates from 3D points
+- Reorder and combine vector components
+
 ### Vector2 and IVector2
 
 Perfect for 2D graphics, UI positioning, and planar mathematics. Use `IVector2` for grid-based operations where integer precision is required.
@@ -71,6 +124,10 @@ from panda_math import Vector2, IVector2, ivec2
 # Float vectors for continuous positions
 pos = Vector2(10.5, 20.3)
 velocity = Vector2([5, -3])  # From list/tuple
+
+# GLSL-style construction with mixed types
+combined = Vector2(pos.x, velocity.y)  # Mix components
+from_list = Vector2([1, 2], 0)  # Takes first 2 from list
 
 # Integer vectors for grid-based operations
 grid_pos = IVector2(5, 10)
@@ -108,6 +165,10 @@ forward = Vector3(0, 0, 1)
 up = Vector3(0, 1, 0)
 right = forward.cross(up)    # Cross product: Vector3(1, 0, 0)
 
+# GLSL-style construction - mix vectors and scalars
+position_3d = Vector3(vec2(10, 20), 5)  # Vector3(10, 20, 5)
+extended = Vector3(forward.xy, 0)       # Vector3(0, 0, 0)
+
 # Integer vectors for voxel/grid operations
 voxel_pos = IVector3(10, 5, -3)
 chunk_coords = ivec3(2, 0, 1)  # Convenient alias
@@ -139,12 +200,17 @@ from panda_math import Vector4, IVector4, ivec4
 point = Vector4(10, 20, 30, 1)
 direction = Vector4(0, 1, 0, 0)
 
+# GLSL-style construction - incredibly flexible!
+color_from_vec3 = Vector4(vec3(1.0, 0.5, 0.25), 1.0)  # RGB + alpha
+from_two_vec2s = Vector4(vec2(0.5, 0.5), vec2(1.0, 0.0))  # Two pairs
+
 # Float color manipulation (0.0-1.0 range)
 red = Vector4(1.0, 0.0, 0.0, 1.0)  # RGBA
 transparent_red = red * Vector4(1, 1, 1, 0.5)
 
 # Integer vectors for RGBA color manipulation (0-255 range)
 pixel_color = IVector4(255, 128, 64, 255)
+from_rgb = ivec4(ivec3(255, 128, 64), 255)  # RGB + alpha
 darker = pixel_color // 2  # IVector4(127, 64, 32, 127)
 blended = (pixel_color + ivec4(0, 50, 0, 0)) # Add green
 
@@ -468,20 +534,6 @@ iv = IVector3(1, 2, 3)
 iv_bytes = iv.to_bytes()  # Converts to float: b'\x00\x00\x80?...' (12 bytes)
 ```
 
-### Conversion Between Dimensions
-
-```python
-from panda_math import vec2_to_vec3, vec3_to_vec2, vec3_to_vec4
-
-# Convert between vector dimensions
-v2d = Vector2(10, 20)
-v3d = vec2_to_vec3(v2d, z=0)      # Add z component
-v4d = vec3_to_vec4(v3d, w=1)      # Add w component
-
-# Project back down
-projected = vec3_to_vec2(v3d)     # Drop z component
-```
-
 ### Matrix Construction Utilities
 
 ```python
@@ -661,7 +713,7 @@ eigenvalues, eigenvectors = covariance.eigenvectors()
 
 ## API Reference
 
-### VectorBase (Generic Base Class)
+### Vector (Generic Base Class)
 
 - `magnitude: float` - Vector length/magnitude
 - `normalize() -> T` - Returns normalized vector (unit length)
@@ -746,12 +798,6 @@ eigenvalues, eigenvectors = covariance.eigenvectors()
 #### Utilities
 
 - `interpolate_matrices(a: Matrix, b: Matrix, t: float) -> Matrix`
-- `vec2_to_vec3(v: Vector2, z: float = 0.0) -> Vector3`
-- `vec2_to_vec4(v: Vector2, z: float = 0.0, w: float = 1.0) -> Vector4`
-- `vec3_to_vec2(v: Vector3) -> Vector2`
-- `vec3_to_vec4(v: Vector3, w: float = 1.0) -> Vector4`
-- `vec4_to_vec2(v: Vector4) -> Vector2`
-- `vec4_to_vec3(v: Vector4) -> Vector3`
 
 ## Requirements
 

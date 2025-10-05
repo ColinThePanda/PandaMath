@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from panda_math import Vector2, Vector3, Vector4, vec2_to_vec3, vec3_to_vec2, vec4_to_vec3
+from panda_math import Vector2, Vector3, Vector4
 from panda_math import Matrix
 
 
@@ -255,20 +255,20 @@ class TestVector4(unittest.TestCase):
 class TestVectorConversions(unittest.TestCase):
     def test_vec2_to_vec3(self):
         v2 = Vector2(1, 2)
-        v3 = vec2_to_vec3(v2, 5)
+        v3 = Vector3(v2, 5)
         self.assertEqual(v3.x, 1)
         self.assertEqual(v3.y, 2)
         self.assertEqual(v3.z, 5)
         
     def test_vec3_to_vec2(self):
         v3 = Vector3(1, 2, 3)
-        v2 = vec3_to_vec2(v3)
+        v2 = Vector2(v3)
         self.assertEqual(v2.x, 1)
         self.assertEqual(v2.y, 2)
         
     def test_vec4_to_vec3(self):
         v4 = Vector4(1, 2, 3, 4)
-        v3 = vec4_to_vec3(v4)
+        v3 = Vector3(v4)
         self.assertEqual(v3.x, 1)
         self.assertEqual(v3.y, 2)
         self.assertEqual(v3.z, 3)

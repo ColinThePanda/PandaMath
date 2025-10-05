@@ -1,5 +1,5 @@
 # Vector classes
-from .vector import Vector2, Vector3, Vector4, VectorBase, IVector2, IVector3, IVector4
+from .vector import Vector2, Vector3, Vector4, Vector, IVector2, IVector3, IVector4
 
 # Matrix class and constants
 from .matrix import Matrix, IDENTITY_2D, IDENTITY_3D, IDENTITY_4D
@@ -40,22 +40,6 @@ from .matrix import (
     interpolate_matrices,
 )
 
-# If utility functions are in vector.py:
-from .vector import (
-    vec2_to_vec3,
-    vec2_to_vec4,
-    vec3_to_vec2,
-    vec3_to_vec4,
-    vec4_to_vec2,
-    vec4_to_vec3,
-    ivec2_to_ivec3,
-    ivec2_to_ivec4,
-    ivec3_to_ivec2,
-    ivec3_to_ivec4,
-    ivec4_to_ivec2,
-    ivec4_to_ivec3,
-)
-
 # Public API
 __all__ = [
     # Vector classes
@@ -65,7 +49,7 @@ __all__ = [
     "IVector3",
     "Vector4",
     "IVector4",
-    "VectorBase",
+    "Vector",
     # Matrix class
     "Matrix",
     # Identity matrices
@@ -104,17 +88,5 @@ __all__ = [
     "orthographic_projection_matrix",
     "look_at_matrix",
     # Utilities
-    "vec2_to_vec3",
-    "vec2_to_vec4",
-    "vec3_to_vec2",
-    "vec3_to_vec4",
-    "vec4_to_vec2",
-    "vec4_to_vec3",
-    "ivec2_to_ivec3",
-    "ivec2_to_ivec4",
-    "ivec3_to_ivec2",
-    "ivec3_to_ivec4",
-    "ivec4_to_ivec2",
-    "ivec4_to_ivec3",
     "interpolate_matrices",
 ]
