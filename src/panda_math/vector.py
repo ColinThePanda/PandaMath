@@ -63,11 +63,12 @@ class Vector(Generic[T], Sequence[float], ABC):
 
     def to_numpy(self) -> np.ndarray:
         return np.array(list(self))
-    
+
     def to_bytes(self) -> bytes:
         """Convert vector to bytes for GLSL shader uniforms (little-endian float32)"""
         import struct
-        return struct.pack(f'<{len(self)}f', *self)
+
+        return struct.pack(f"<{len(self)}f", *self)
 
     def _get_component(self, char: str) -> float:
         components = vars(self)
@@ -139,17 +140,19 @@ class Vector2(Vector["Vector2"]):
     def __init__(self, *args):
         self._x: float
         self._y: float
-        
+
         # Flatten all arguments into a list of scalars
         flattened = []
         for arg in args:
-            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(
+                arg, (str, bytes)
+            ):
                 flattened.extend(arg)
             elif isinstance(arg, Number):
                 flattened.append(arg)
             else:
                 raise TypeError(f"Invalid argument type for Vector2: {type(arg)}")
-        
+
         if len(flattened) == 0:
             self._x = self._y = self._vector_type()(0)
         elif len(flattened) == 1:
@@ -158,7 +161,7 @@ class Vector2(Vector["Vector2"]):
             self._x, self._y = map(self._vector_type(), flattened[:2])
         else:
             raise TypeError("Invalid arguments for Vector2")
-        
+
     @property
     def x(self) -> float:
         return self._x
@@ -465,26 +468,40 @@ class IVector2(Vector2):
     def __init__(self, *args):
         self._x: int
         self._y: int
-        
-        # Flatten all arguments into a list of scalars
+
         flattened = []
         for arg in args:
-            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(
+                arg, (str, bytes)
+            ):
                 flattened.extend(arg)
             elif isinstance(arg, Number):
                 flattened.append(arg)
             else:
                 raise TypeError(f"Invalid argument type for IVector2: {type(arg)}")
-        
+
         if len(flattened) == 0:
             self._x = self._y = self._vector_type()(0)
         elif len(flattened) == 1:
             self._x = self._y = self._vector_type()(flattened[0])
-        elif len(flattened) >= 2:
-            self._x, self._y = map(self._vector_type(), flattened[:2])
         else:
-            raise TypeError("Invalid arguments for IVector2")
+            self._x, self._y = map(self._vector_type(), flattened[:2])
 
+    @property
+    def x(self) -> int:
+        return self._x
+
+    @x.setter
+    def x(self, value: int):
+        self._x = value
+
+    @property
+    def y(self) -> int:
+        return self._y
+
+    @y.setter
+    def y(self, value: int):
+        self._y = value
 
 
 class Vector3(Vector["Vector3"]):
@@ -500,17 +517,19 @@ class Vector3(Vector["Vector3"]):
         self._x: float
         self._y: float
         self._z: float
-        
+
         # Flatten all arguments into a list of scalars
         flattened = []
         for arg in args:
-            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(
+                arg, (str, bytes)
+            ):
                 flattened.extend(arg)
             elif isinstance(arg, Number):
                 flattened.append(arg)
             else:
                 raise TypeError(f"Invalid argument type for Vector3: {type(arg)}")
-        
+
         if len(flattened) == 0:
             self._x = self._y = self._z = self._vector_type()(0)
         elif len(flattened) == 1:
@@ -879,17 +898,19 @@ class IVector3(Vector3):
         self._x: int
         self._y: int
         self._z: int
-        
+
         # Flatten all arguments into a list of scalars
         flattened = []
         for arg in args:
-            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(
+                arg, (str, bytes)
+            ):
                 flattened.extend(arg)
             elif isinstance(arg, Number):
                 flattened.append(arg)
             else:
                 raise TypeError(f"Invalid argument type for IVector3: {type(arg)}")
-        
+
         if len(flattened) == 0:
             self._x = self._y = self._z = self._vector_type()(0)
         elif len(flattened) == 1:
@@ -915,17 +936,19 @@ class Vector4(Vector["Vector4"]):
         self._y: float
         self._z: float
         self._w: float
-        
+
         # Flatten all arguments into a list of scalars
         flattened = []
         for arg in args:
-            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(
+                arg, (str, bytes)
+            ):
                 flattened.extend(arg)
             elif isinstance(arg, Number):
                 flattened.append(arg)
             else:
                 raise TypeError(f"Invalid argument type for Vector4: {type(arg)}")
-        
+
         if len(flattened) == 0:
             self._x = self._y = self._z = self._w = self._vector_type()(0)
         elif len(flattened) == 1:
@@ -1410,17 +1433,19 @@ class IVector4(Vector4):
         self._y: int
         self._z: int
         self._w: int
-        
+
         # Flatten all arguments into a list of scalars
         flattened = []
         for arg in args:
-            if isinstance(arg, (Vector, Iterable)) and not isinstance(arg, (str, bytes)):
+            if isinstance(arg, (Vector, Iterable)) and not isinstance(
+                arg, (str, bytes)
+            ):
                 flattened.extend(arg)
             elif isinstance(arg, Number):
                 flattened.append(arg)
             else:
                 raise TypeError(f"Invalid argument type for IVector4: {type(arg)}")
-        
+
         if len(flattened) == 0:
             self._x = self._y = self._z = self._w = self._vector_type()(0)
         elif len(flattened) == 1:
@@ -1429,7 +1454,6 @@ class IVector4(Vector4):
             self._x, self._y, self._z, self._w = map(self._vector_type(), flattened[:4])
         else:
             raise TypeError("Invalid arguments for IVector4")
-
 
 
 # Provide convenient aliases
@@ -1446,4 +1470,3 @@ IVec3 = IVector3
 ivec3 = IVector3
 IVec4 = IVector4
 ivec4 = IVector4
-
