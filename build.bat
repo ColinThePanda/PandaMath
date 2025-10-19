@@ -4,7 +4,7 @@ setlocal
 echo Cleaning old builds...
 rmdir /S /Q build 2>nul
 rmdir /S /Q dist 2>nul
-rmdir /S /Q pandacolor.egg-info 2>nul
+rmdir /S /Q src\panda_math.egg-info
 
 echo Building package...
 python -m build
